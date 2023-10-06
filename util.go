@@ -5,6 +5,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
+
+	log "github.com/jimxshaw/tracerlogger/logger"
+	"go.uber.org/zap"
 )
 
 // Header for HTTP Strict Transport Security (HSTS) policy mechanism on web servers.
@@ -17,6 +20,22 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Strict-Transport-Security", strictTransportSecurity)
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(payload)
+}
+
+// RespondWithJSON send a JSON-formatted error response.
+func RespondWithError(w http.ResponseWriter, code int, err error) {
+	log.Error("request with error", zap.Error(err))
+	if err == nil {
+		RespondWithJSON(
+			w,
+			code,
+			map[string]string{
+				"error": "Something went wrong. Please try again or contact site administrators.",
+			},
+		)
+		return
+	}
+	RespondWithJSON(w, code, map[string]string{"error": err.Error()})
 }
 
 // RandomHex generates a random hex value.
